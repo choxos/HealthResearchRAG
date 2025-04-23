@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Health Research RAG - Configuration{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h4>Configuration</h4>
+            </div>
+            <div class="card-body">
+                {% if project_info.status == 'not_initialized' %}
+                    <div class="alert alert-warning">
+                        Please set up your project first.
+                        <a href="/setup" class="btn btn-primary btn-sm ms-2">Set Up Project</a>
+                    </div>
+                {% elif not config %}
+                    <div class="alert alert-danger">
+                        Configuration not available.
+                    </div>
+                {% else %}
+                    <form id="config-form">
+                        <div class="mb-3">
+                            <label for="project_title" class="form-label">Project Title</label>
+                            <input type="text" class="form-control" id="project_title" name="project_title" 
+                                   value="{{ config.project.title }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="model_name" class="form-label">LLM Model</label>
+                            <input type="text" class="form-control" id="model_name" name="model_name" 
+                                   value="{{ config.models.llm.name }}">
+                            <div class="form-text">Model must be available in Ollama (e.g., llama3, deepseek-r1:8b)</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="embedding_model" class="form-label">Embedding Model</label>
+                            <input type="text" class="form-control" id="embedding_model" name="embedding_model" 
+                                   value="{{ config.models.embedding.name }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="system_prompt" class="form-label">System Prompt Template</label>
+                            <textarea class="form-control" id="system_prompt" name="system_prompt" rows="10">{{ config.prompts.system_template }}</textarea>
+                            <div class="form-text">Use {context} for retrieved context and {question} for user's question.</div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    </form>
+                    
+                    <div id="config-results" class="mt-3"></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#config-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = {
+            project_title: $('#project_title').val(),
+            model_name: $('#model_name').val(),
+            embedding_model: $('#embedding_model').val(),
+            system_prompt: $('#system_prompt').val()
+        };
+        
+        var $results = $('#config-results');
+        var $btn = $(this).find('button[type="submit"]');
+        
+        $btn.prop('disabled', true);
+        $results.html('');
+        
+        $.ajax({
+            url: '/config',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                $btn.prop('disabled', false);
+                $results.html('<div class="alert alert-success">' + response.message + '</div>');
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false);
+                
+                var errorMsg = 'Failed to save configuration';
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.error) {
+                        errorMsg = response.error;
+                    }
+                } catch(e) {}
+                
+                $results.html('<div class="alert alert-danger">' + errorMsg + '</div>');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

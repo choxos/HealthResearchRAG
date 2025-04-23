@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Health Research RAG - Process Documents{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h4>Process Documents</h4>
+            </div>
+            <div class="card-body">
+                {% if project_info.status == 'not_initialized' %}
+                    <div class="alert alert-warning">
+                        Please set up your project first.
+                        <a href="/setup" class="btn btn-primary btn-sm ms-2">Set Up Project</a>
+                    </div>
+                {% else %}
+                    <p>Convert your PDF documents into text and markdown formats for indexing.</p>
+                    
+                    <div class="alert alert-info">
+                        Make sure you have uploaded your documents first.
+                        <a href="/upload" class="btn btn-outline-primary btn-sm ms-2">Upload Documents</a>
+                    </div>
+                    
+                    <button id="process-btn" class="btn btn-primary">Process Documents</button>
+                    
+                    <div id="processing-status" class="mt-3 d-none">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Processing...</span>
+                        </div>
+                        <span class="ms-2">Processing documents, please wait...</span>
+                    </div>
+                    
+                    <div id="process-results" class="mt-3"></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#process-btn').on('click', function() {
+        var $status = $('#processing-status');
+        var $results = $('#process-results');
+        var $btn = $(this);
+        
+        $btn.prop('disabled', true);
+        $status.removeClass('d-none');
+        $results.html('');
+        
+        $.ajax({
+            url: '/process',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({}),
+            success: function(response) {
+                $status.addClass('d-none');
+                $btn.prop('disabled', false);
+                
+                var html = '<div class="alert alert-success">' + response.message + '</div>';
+                if (response.stats) {
+                    html += '<h5>Processing Statistics:</h5>';
+                    html += '<ul>';
+                    html += '<li>Total documents: ' + response.stats.total + '</li>';
+                    html += '<li>Processed to text: ' + response.stats.processed_text + '</li>';
+                    if (response.stats.processed_markdown) {
+                        html += '<li>Processed to markdown: ' + response.stats.processed_markdown + '</li>';
+                    }
+                    if (response.stats.failed) {
+                        html += '<li class="text-danger">Failed: ' + response.stats.failed + '</li>';
+                    }
+                    html += '</ul>';
+                }
+                $results.html(html);
+            },
+            error: function(xhr) {
+                $status.addClass('d-none');
+                $btn.prop('disabled', false);
+                
+                var errorMsg = 'Processing failed';
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.error) {
+                        errorMsg = response.error;
+                    }
+                } catch(e) {}
+                $results.html('<div class="alert alert-danger">' + errorMsg + '</div>');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

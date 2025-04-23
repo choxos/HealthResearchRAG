@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Health Research RAG - Setup{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h4>Set Up Your RAG Project</h4>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                
+                <form method="POST" action="/setup">
+                    <div class="mb-3">
+                        <label for="project_title" class="form-label">Project Title</label>
+                        <input type="text" class="form-control" id="project_title" name="project_title" 
+                               placeholder="e.g., Cardiology Research RAG" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="project_path" class="form-label">Project Path (optional)</label>
+                        <input type="text" class="form-control" id="project_path" name="project_path" 
+                               placeholder="Leave blank for default location">
+                        <div class="form-text">If left blank, a directory will be created based on the project title.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="config_path" class="form-label">Configuration File Path (optional)</label>
+                        <input type="text" class="form-control" id="config_path" name="config_path" 
+                               placeholder="Path to an existing config.yaml file">
+                        <div class="form-text">If left blank, a new configuration file will be created.</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Create Project</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
